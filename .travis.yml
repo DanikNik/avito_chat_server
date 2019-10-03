@@ -18,5 +18,5 @@ install:
 script:
   - go build cmd/chat.go
   - go build cmd/db_queue.go
-  - go test -v race ./...
+  - go test -v -race ./...
   - golangci-lint -c .golangci.yml
