@@ -1,17 +1,17 @@
-package grpcManager
+package clientmanager
 
 import (
 	"chat_server/dbProto"
 	"google.golang.org/grpc"
 )
 
-type Manager struct {
+type ClientManager struct {
 	conn     *grpc.ClientConn
 	DbClient dbProto.DatabaseServiceClient
 }
 
-func NewManager(conn *grpc.ClientConn) *Manager {
-	return &Manager{
+func NewClientManager(conn *grpc.ClientConn) *ClientManager {
+	return &ClientManager{
 		conn:     conn,
 		DbClient: dbProto.NewDatabaseServiceClient(conn),
 	}

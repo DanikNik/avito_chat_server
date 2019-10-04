@@ -22,7 +22,10 @@ func (h *HandlerSet) CreateUser(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v\n", userCreateReqData)
 	data, _ := json.Marshal(&userCreateReqData)
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println("Connection broke:c")
+	}
 }
 func (h *HandlerSet) CreateChat(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
@@ -36,7 +39,10 @@ func (h *HandlerSet) CreateChat(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v\n", chatCreateReqData)
 	data, _ := json.Marshal(&chatCreateReqData)
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println("Connection broke:c")
+	}
 }
 func (h *HandlerSet) PostMessage(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
@@ -50,7 +56,10 @@ func (h *HandlerSet) PostMessage(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v\n", postMessageReqData)
 	data, _ := json.Marshal(&postMessageReqData)
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println("Connection broke:c")
+	}
 }
 func (h *HandlerSet) ListChats(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
@@ -64,7 +73,10 @@ func (h *HandlerSet) ListChats(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v\n", chatListReqData)
 	data, _ := json.Marshal(&chatListReqData)
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println("Connection broke:c")
+	}
 }
 func (h *HandlerSet) ListMessages(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
@@ -78,5 +90,8 @@ func (h *HandlerSet) ListMessages(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v\n", messageListReqData)
 	data, _ := json.Marshal(&messageListReqData)
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println("Connection broke:c")
+	}
 }

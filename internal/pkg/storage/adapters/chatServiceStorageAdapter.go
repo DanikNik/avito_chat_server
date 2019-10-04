@@ -2,12 +2,12 @@ package adapters
 
 import (
 	"chat_server/dbProto"
-	"chat_server/internal/pkg/grpcManager"
+	"chat_server/internal/pkg/grpc/clientmanager"
 	"context"
 )
 
 type ChatStorageAdapter struct {
-	Manager *grpcManager.Manager
+	Manager *clientmanager.ClientManager
 }
 
 func (c ChatStorageAdapter) CreateUser(request *dbProto.UserCreateRequest) (*dbProto.UserModel, error) {
@@ -30,6 +30,6 @@ func (c ChatStorageAdapter) ListChatMessages(request *dbProto.ListChatMessagesRe
 	return c.Manager.DbClient.ListChatMessages(context.Background(), request)
 }
 
-func NewChatStorageAdapter(manager *grpcManager.Manager) ChatStorageAdapter {
+func NewChatStorageAdapter(manager *clientmanager.ClientManager) ChatStorageAdapter {
 	return ChatStorageAdapter{Manager: manager}
 }
