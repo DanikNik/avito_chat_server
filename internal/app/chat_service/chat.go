@@ -1,8 +1,10 @@
-package app
+package chat_service
 
 import (
 	"chat_server/internal/pkg/handlers"
+	"chat_server/internal/pkg/storageAdapters"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 )
 
@@ -12,12 +14,23 @@ type Config struct {
 
 type ChatService struct {
 	Router   *mux.Router
-	Handlers handlers.HandlerSet
+	Handlers *handlers.HandlerSet
+	Storage  storageAdapters.StorageAdapter
 	Config   Config
 }
 
-func NewChatService(router *mux.Router) *ChatService {
-	return &ChatService{Router: router}
+func NewChatService(
+	router *mux.Router,
+	handlers *handlers.HandlerSet,
+	storage storageAdapters.StorageAdapter,
+	config Config,
+) *ChatService {
+	return &ChatService{
+		Router:   router,
+		Handlers: handlers,
+		Storage:  storage,
+		Config:   config,
+	}
 }
 
 func (c *ChatService) Start() error {
@@ -30,6 +43,7 @@ func (c *ChatService) Start() error {
 	chatRouter.HandleFunc("/get", c.Handlers.ListChats).Methods("GET")
 	messageRouter.HandleFunc("/add", c.Handlers.PostMessage).Methods("POST")
 	messageRouter.HandleFunc("/get", c.Handlers.ListMessages).Methods("GET")
+	log.Println("Server started ad", c.Config.Port)
 
 	return http.ListenAndServe(c.Config.Port, c.Router)
 }
