@@ -5,6 +5,7 @@ language: go
 cache: false
 go:
   - 1.11.x
+  - 1.12.x
 
 services: docker
 
