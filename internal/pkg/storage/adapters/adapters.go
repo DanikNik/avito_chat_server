@@ -1,4 +1,4 @@
-package storageAdapters
+package adapters
 
 import "chat_server/dbProto"
 
