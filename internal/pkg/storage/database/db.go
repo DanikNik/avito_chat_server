@@ -10,7 +10,7 @@ import (
 )
 
 type DbStorageAdapter struct {
-	dbObj *pgx.ConnPool
+	DbObj *pgx.ConnPool
 }
 
 var (
@@ -26,9 +26,7 @@ const (
 	notNullError = "23502"
 )
 
-func NewDbStorageAdapter() (DbStorageAdapter, error) {
-
-	a := DbStorageAdapter{}
+func MakeProdConnPool() (*pgx.ConnPool, error) {
 
 	port := 5432
 
@@ -52,17 +50,21 @@ func NewDbStorageAdapter() (DbStorageAdapter, error) {
 
 	dbObj, err := pgx.NewConnPool(poolConfig)
 	if err != nil {
-		return DbStorageAdapter{}, fmt.Errorf("Unable to establish connection: %v\n", err)
+		return nil, fmt.Errorf("Unable to establish connection: %v\n", err)
 	}
 	log.Println("Connection established...")
+	return dbObj, nil
+}
 
-	a.dbObj = dbObj
+func NewDbStorageAdapter(cp *pgx.ConnPool) (DbStorageAdapter, error) {
+	a := DbStorageAdapter{}
+	a.DbObj = cp
 	return a, nil
 }
 
 func (d DbStorageAdapter) CreateUser(request *dbProto.UserCreateRequest) (u *dbProto.UserModel, e error) {
 	u = &dbProto.UserModel{}
-	row := d.dbObj.QueryRow(CreateUserQuery, request.GetUsername())
+	row := d.DbObj.QueryRow(CreateUserQuery, request.GetUsername())
 	err := row.Scan(
 		&u.Id,
 		&u.Username,

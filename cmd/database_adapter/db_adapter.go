@@ -7,7 +7,11 @@ import (
 )
 
 func main() {
-	db, err := database.NewDbStorageAdapter()
+	cp, err := database.MakeProdConnPool()
+	if err != nil {
+		panic(err)
+	}
+	db, err := database.NewDbStorageAdapter(cp)
 	if err != nil {
 		panic(err)
 	}
