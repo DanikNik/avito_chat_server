@@ -65,6 +65,10 @@ func mockDbConnPool() (*pgx.ConnPool, error) {
 }
 
 func setup() error {
+	err := os.Chdir(os.Getenv("CHAT_PROJECT_ROOT"))
+	if err != nil {
+		return fmt.Errorf("Error changing workdir: %v", err)
+	}
 	log.Println("Started setup...")
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -73,7 +77,7 @@ func setup() error {
 	MainFixture.testDockerClient = cli
 	id, err := dockerloader.CreateTestDbEnv(
 		cli,
-		os.Getenv("CHAT_PROJECT_ROOT"),
+		".",
 		"chat-test-db",
 	)
 	if err != nil {
