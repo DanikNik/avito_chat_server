@@ -46,7 +46,7 @@ func mockDbConnPool() (*pgx.ConnPool, error) {
 
 	var dbObj *pgx.ConnPool
 	err := fmt.Errorf("not init")
-	for _ = range [5]interface{}{} {
+	for range [5]interface{}{} {
 		dbObj, err = pgx.NewConnPool(poolConfig)
 		if err != nil {
 			log.Printf("Retrying connection")
@@ -73,7 +73,7 @@ func setup() error {
 	MainFixture.testDockerClient = cli
 	id, err := dockerloader.CreateTestDbEnv(
 		cli,
-		".",
+		os.Getenv("CHAT_PROJECT_ROOT"),
 		"chat-test-db",
 	)
 	if err != nil {

@@ -10,6 +10,7 @@ services: docker
 
 env:
   - GO111MODULE=on
+  - CHAT_PROJECT_ROOT=/home/travis/gopath/src/github.com/DanikNik/avito_chat_server
 
 install:
   - go mod download
@@ -20,4 +21,3 @@ script:
   - go build cmd/database_adapter/db_adapter.go
   - go test -v -race ./...
   - golangci-lint run -c .golangci.yml
-  - echo Everything ok
