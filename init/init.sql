@@ -4,14 +4,14 @@ CREATE TABLE IF NOT EXISTS chat_service.users
 (
     id         BIGSERIAL PRIMARY KEY NOT NULL,
     nickname   TEXT UNIQUE           NOT NULL,
-    created_at timestamptz           NOT NULL DEFAULT now()
+    created_at BIGINT                NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS chat_service.chats
 (
     id         BIGSERIAL PRIMARY KEY NOT NULL,
-    name       TEXT UNIQUE,
-    created_at timestamptz           NOT NULL DEFAULT now()
+    name       TEXT UNIQUE           NOT NULL,
+    created_at BIGINT                NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS chat_service.chat_to_user_rel
@@ -27,5 +27,5 @@ CREATE TABLE IF NOT EXISTS chat_service.messages
     chat       BIGINT REFERENCES chat_service.chats (id) NOT NULL,
     author     BIGINT REFERENCES chat_service.users (id) NOT NULL,
     text       TEXT                                      NOT NULL,
-    created_at timestamptz                               NOT NULL DEFAULT now()
+    created_at BIGINT                                    NOT NULL
 );

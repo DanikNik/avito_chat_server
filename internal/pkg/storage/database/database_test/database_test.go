@@ -121,43 +121,6 @@ func midTeardown() error {
 	return nil
 }
 
-func TestDbStorageAdapter_CreateChat(t *testing.T) {
-	type fields struct {
-		DbObj *pgx.ConnPool
-	}
-	type args struct {
-		request *dbProto.ChatCreateRequest
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *dbProto.ChatModel
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := database.DbStorageAdapter{
-				DbObj: tt.fields.DbObj,
-			}
-			got, err := d.CreateChat(tt.args.request)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateChat() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CreateChat() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-	err := midTeardown()
-	if err != nil {
-		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
-	}
-}
-
 func TestDbStorageAdapter_CreateUser(t *testing.T) {
 	type fields struct {
 		DbObj *pgx.ConnPool
@@ -170,6 +133,154 @@ func TestDbStorageAdapter_CreateUser(t *testing.T) {
 		fields  fields
 		args    args
 		wantU   *dbProto.UserModel
+		wantErr error
+	}{
+		{
+			name: "Test Create User Simple",
+			fields: fields{
+				DbObj: MainFixture.testConnPool,
+			},
+			args: args{
+				request: &dbProto.UserCreateRequest{
+					Username: "test_name",
+				},
+			},
+			wantU: &dbProto.UserModel{
+				Id:       1,
+				Username: "test_name",
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Test Create User Unique violation",
+			fields: fields{
+				DbObj: MainFixture.testConnPool,
+			},
+			args: args{
+				request: &dbProto.UserCreateRequest{
+					Username: "test_name",
+				},
+			},
+			wantU:   nil,
+			wantErr: database.ErrConflict,
+		},
+		{
+			name: "Test Create User Empty Nickname",
+			fields: fields{
+				MainFixture.testConnPool,
+			},
+			args: args{
+				request: &dbProto.UserCreateRequest{
+					Username: "",
+				},
+			},
+			wantU:   nil,
+			wantErr: database.ErrNotNull,
+		},
+		//{
+		//	name: "Test Create User ConnectionBroken",
+		//	fields: fields{
+		//		MainFixture.testConnPool,
+		//	},
+		//	args: args{
+		//		request: &dbProto.UserCreateRequest{
+		//			Username: "",
+		//		},
+		//	},
+		//	wantU:   nil,
+		//	wantErr: database.ErrNotNull,
+		//},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := database.DbStorageAdapter{
+				DbObj: tt.fields.DbObj,
+			}
+			timeNow := time.Now().Unix()
+			tt.args.request.CreatedAt = timeNow
+			if tt.wantU != nil {
+				tt.wantU.CreatedAt = timeNow
+			}
+			gotU, err := d.CreateUser(tt.args.request)
+			if tt.wantErr != nil {
+				if err == nil {
+					t.Errorf("CreateUser() error is nil, wantErr = %v", tt.wantErr)
+				} else if err.Error() != tt.wantErr.Error() {
+					t.Errorf("CreateUser() error = %v, wantErr = %v", err, tt.wantErr)
+				}
+			} else if err != nil {
+				t.Errorf("CreateUser() error = %v, wantErr is nil", err)
+			}
+			if !reflect.DeepEqual(gotU, tt.wantU) {
+				t.Errorf("CreateUser() gotU = %v, want %v", gotU, tt.wantU)
+			}
+		})
+	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
+	}
+}
+
+func TestDbStorageAdapter_CreateChat(t *testing.T) {
+	type fields struct {
+		DbObj *pgx.ConnPool
+	}
+	type args struct {
+		request *dbProto.ChatCreateRequest
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantC   *dbProto.ChatModel
+		wantErr error
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := database.DbStorageAdapter{
+				DbObj: tt.fields.DbObj,
+			}
+			timeNow := time.Now().Unix()
+			tt.args.request.CreatedAt = timeNow
+			if tt.wantC != nil {
+				tt.wantC.CreatedAt = timeNow
+			}
+			gotC, err := d.CreateChat(tt.args.request)
+			if tt.wantErr != nil {
+				if err == nil {
+					t.Errorf("CreateChat() error is nil, wantErr = %v", tt.wantErr)
+				} else if err.Error() != tt.wantErr.Error() {
+					t.Errorf("CreateChat() error = %v, wantErr = %v", err, tt.wantErr)
+				}
+			} else if err != nil {
+				t.Errorf("CreateChat() error = %v, wantErr is nil", err)
+			}
+			if !reflect.DeepEqual(gotC, tt.wantC) {
+				t.Errorf("CreateChat() gotC = %v, want %v", gotC, tt.wantC)
+			}
+		})
+	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
+	}
+}
+
+func TestDbStorageAdapter_PostMessage(t *testing.T) {
+	type fields struct {
+		DbObj *pgx.ConnPool
+	}
+	type args struct {
+		request *dbProto.PostMessageRequest
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *dbProto.MessageModel
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -179,13 +290,13 @@ func TestDbStorageAdapter_CreateUser(t *testing.T) {
 			d := database.DbStorageAdapter{
 				DbObj: tt.fields.DbObj,
 			}
-			gotU, err := d.CreateUser(tt.args.request)
+			got, err := d.PostMessage(tt.args.request)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("PostMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotU, tt.wantU) {
-				t.Errorf("CreateUser() gotU = %v, want %v", gotU, tt.wantU)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("PostMessage() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -260,43 +371,6 @@ func TestDbStorageAdapter_ListUserChats(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ListUserChats() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-	err := midTeardown()
-	if err != nil {
-		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
-	}
-}
-
-func TestDbStorageAdapter_PostMessage(t *testing.T) {
-	type fields struct {
-		DbObj *pgx.ConnPool
-	}
-	type args struct {
-		request *dbProto.PostMessageRequest
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *dbProto.MessageModel
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := database.DbStorageAdapter{
-				DbObj: tt.fields.DbObj,
-			}
-			got, err := d.PostMessage(tt.args.request)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PostMessage() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("PostMessage() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

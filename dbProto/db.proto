@@ -12,6 +12,8 @@ service DatabaseService {
 
 message UserCreateRequest {
     string username = 1;
+    //mute json
+    int64 created_at = 2;
 }
 
 message UserModel {
@@ -23,6 +25,8 @@ message UserModel {
 message ChatCreateRequest {
     string name = 1;
     repeated int64 users = 2;
+    //mute json
+    int64 created_at = 3;
 }
 
 message ChatModel {
@@ -36,6 +40,8 @@ message PostMessageRequest {
     int64 chat = 1;
     int64 author = 2;
     string text = 3;
+    //mute json
+    int64 created_at = 4;
 }
 
 message MessageModel {
@@ -43,6 +49,7 @@ message MessageModel {
     int64 chat = 2;
     int64 author = 3;
     string text = 4;
+    //mute json
     int64 created_at = 5;
 }
 

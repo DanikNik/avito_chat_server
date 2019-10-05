@@ -2,7 +2,6 @@ package database
 
 import (
 	"chat_server/dbProto"
-	"errors"
 	"fmt"
 	"github.com/jackc/pgx"
 	"log"
@@ -14,10 +13,11 @@ type DbStorageAdapter struct {
 }
 
 var (
-	NotInit     = errors.New("db wasn't initialized")
-	AlreadyInit = errors.New("db already initialized")
-	ErrNotFound = errors.New("not found")
-	ErrConflict = errors.New("conflict")
+	NotInit     = fmt.Errorf("db wasn't initialized")
+	AlreadyInit = fmt.Errorf("db already initialized")
+	ErrNotFound = fmt.Errorf("not found")
+	ErrConflict = fmt.Errorf("conflict")
+	ErrNotNull  = fmt.Errorf("not null violation")
 )
 
 const (
@@ -62,9 +62,14 @@ func NewDbStorageAdapter(cp *pgx.ConnPool) (DbStorageAdapter, error) {
 	return a, nil
 }
 
-func (d DbStorageAdapter) CreateUser(request *dbProto.UserCreateRequest) (u *dbProto.UserModel, e error) {
-	u = &dbProto.UserModel{}
-	row := d.DbObj.QueryRow(CreateUserQuery, request.GetUsername())
+func (d DbStorageAdapter) CreateUser(request *dbProto.UserCreateRequest) (*dbProto.UserModel, error) {
+
+	if request.Username == "" {
+		return nil, ErrNotNull
+	}
+	row := d.DbObj.QueryRow(CreateUserQuery, request.GetUsername(), request.GetCreatedAt())
+
+	u := &dbProto.UserModel{}
 	err := row.Scan(
 		&u.Id,
 		&u.Username,
@@ -77,7 +82,7 @@ func (d DbStorageAdapter) CreateUser(request *dbProto.UserCreateRequest) (u *dbP
 			case uniqueIntegrityError:
 				return nil, ErrConflict
 			case notNullError:
-				return nil, ErrNotFound
+				return nil, ErrNotNull
 			default:
 				return nil, err
 			}

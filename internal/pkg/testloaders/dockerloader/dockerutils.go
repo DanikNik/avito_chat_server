@@ -16,11 +16,11 @@ import (
 
 func tarBuildContext(rootPath string) {
 	tar := new(archivex.TarFile)
-	tar.Create("/tmp/chat-test-db.tar")
+	_ = tar.Create("/tmp/chat-test-db.tar")
 
-	tar.AddAll(rootPath+"/build", true)
-	tar.AddAll(rootPath+"/init", true)
-	tar.Close()
+	_ = tar.AddAll(rootPath+"/build", true)
+	_ = tar.AddAll(rootPath+"/init", true)
+	_ = tar.Close()
 }
 
 func BuildImage(dockerBuildCtxDir string, cli *client.Client, ctx context.Context, tagName string) error {
@@ -84,7 +84,7 @@ func CreateTestDbEnv(cli *client.Client, dockerBuildCtxDir, tagName string) (str
 		return "", err
 	}
 
-	if err := cli.ContainerStart(ctx, containerResp.ID, types.ContainerStartOptions{}); err != nil {
+	if err = cli.ContainerStart(ctx, containerResp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", fmt.Errorf("Error starting container: %v", err.Error())
 	}
 
