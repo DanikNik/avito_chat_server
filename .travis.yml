@@ -9,8 +9,7 @@ go:
 services: docker
 
 env:
-  - GO111MODULE=on
-  - CHAT_PROJECT_ROOT=/home/travis/gopath/src/github.com/DanikNik/avito_chat_server
+  - GO111MODULE=on CHAT_PROJECT_ROOT=/home/travis/gopath/src/github.com/DanikNik/avito_chat_server
 
 install:
   - go mod download
