@@ -11,6 +11,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/jhoonb/archivex"
 	"os"
+	"time"
 )
 
 func tarBuildContext(rootPath string) {
@@ -29,11 +30,10 @@ func BuildImage(dockerBuildCtxDir string, cli *client.Client, ctx context.Contex
 		return fmt.Errorf("Build Context reading error: %v", err.Error())
 	}
 	defer dockerBuildContext.Close()
+
 	buildResp, err := cli.ImageBuild(ctx, dockerBuildContext, types.ImageBuildOptions{
-		Tags: []string{tagName},
-		//ForceRemove: true,
-		//Remove:      true,
-		Dockerfile:     "./build/db.Dockerfile",
+		Tags:           []string{tagName},
+		Dockerfile:     dockerBuildCtxDir + "/build/db.Dockerfile",
 		SuppressOutput: false,
 	})
 	if err != nil {
@@ -48,7 +48,7 @@ func BuildImage(dockerBuildCtxDir string, cli *client.Client, ctx context.Contex
 func CreateContainer(cli *client.Client, ctx context.Context, tagName string) (container.ContainerCreateCreatedBody, error) {
 	hostBinding := nat.PortBinding{
 		HostIP:   "0.0.0.0",
-		HostPort: "8000",
+		HostPort: "12345",
 	}
 	containerPort, err := nat.NewPort("tcp", "5432")
 	if err != nil {
@@ -89,6 +89,19 @@ func CreateTestDbEnv(cli *client.Client, dockerBuildCtxDir, tagName string) (str
 	}
 
 	fmt.Println(containerResp.ID)
+
+	data, err := cli.ContainerInspect(ctx, containerResp.ID)
+	if err != nil {
+		return containerResp.ID, fmt.Errorf("Error inspecting container: %v", err.Error())
+	}
+	timer := time.NewTimer(60 * time.Second)
+	for !data.State.Running {
+		select {
+		case <-timer.C:
+			return containerResp.ID, fmt.Errorf("Container startup timed out")
+		}
+	}
+	timer.Stop()
 	return containerResp.ID, nil
 }
 

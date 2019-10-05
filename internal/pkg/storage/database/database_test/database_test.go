@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 )
 
 type TestFixture struct {
@@ -21,26 +22,99 @@ type TestFixture struct {
 
 var MainFixture = &TestFixture{}
 
-func setup() {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		panic(fmt.Errorf("Error while creating Docker API client: %v", err.Error()))
+func mockDbConnPool() (*pgx.ConnPool, error) {
+	log.Println("Started mocking dbConn...")
+	port := 12345
+
+	connConfig := pgx.ConnConfig{
+		User:              "postgres",
+		Password:          "postgres",
+		Host:              "localhost",
+		Port:              uint16(port),
+		Database:          "chat",
+		TLSConfig:         nil,
+		UseFallbackTLS:    false,
+		FallbackTLSConfig: nil,
 	}
-	MainFixture.testDockerClient = cli
-	id, _ := dockerloader.CreateTestDbEnv(cli, ".", "chat-test-db")
-	MainFixture.testContainerId = id
 
-	//TODO: add database connection init
+	poolConfig := pgx.ConnPoolConfig{
+		ConnConfig:     connConfig,
+		MaxConnections: 50,
+		AcquireTimeout: 10 * time.Second,
+		AfterConnect:   nil,
+	}
 
-	log.Println("Finished setup.")
+	var dbObj *pgx.ConnPool
+	err := fmt.Errorf("not init")
+	for _ = range [5]interface{}{} {
+		dbObj, err = pgx.NewConnPool(poolConfig)
+		if err != nil {
+			log.Printf("Retrying connection")
+			time.Sleep(3 * time.Second)
+		} else {
+			break
+		}
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("Unable to open connection: %v\n", err)
+	}
+
+	log.Println("Connection established.")
+	return dbObj, nil
 }
 
-func teardown() {
+func setup() error {
+	log.Println("Started setup...")
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		return fmt.Errorf("Error while creating Docker API client: %v", err.Error())
+	}
+	MainFixture.testDockerClient = cli
+	id, err := dockerloader.CreateTestDbEnv(
+		cli,
+		".",
+		"chat-test-db",
+	)
+	if err != nil {
+		return err
+	}
+	MainFixture.testContainerId = id
+	log.Println("Finished container initialization.")
+
+	d, err := mockDbConnPool()
+	if err != nil {
+		return fmt.Errorf("Error while creating test database connection: %v", err.Error())
+	}
+	MainFixture.testConnPool = d
+
+	log.Println("Finished setup.")
+	return nil
+}
+
+func teardown(conn bool) {
 	log.Println("Started teardown...")
+	if conn {
+		MainFixture.testConnPool.Close()
+	}
+
 	err := dockerloader.RemoveContainer(MainFixture.testDockerClient, MainFixture.testContainerId)
 	if err != nil {
-		panic(err)
+		log.Fatal(fmt.Errorf("Error while removing container: %v", err.Error()))
 	}
+	log.Println("Finished teardown")
+}
+
+func midTeardown() error {
+	log.Println("Started midTeardown...")
+	_, err := MainFixture.testConnPool.Exec(`
+	TRUNCATE chat_service.users, chat_service.chats, chat_service.messages CASCADE;
+`)
+	if err != nil {
+		return fmt.Errorf("Error while database intermidiate truncating: %v", err.Error())
+	}
+	log.Println("Finished.")
+	return nil
 }
 
 func TestDbStorageAdapter_CreateChat(t *testing.T) {
@@ -73,6 +147,10 @@ func TestDbStorageAdapter_CreateChat(t *testing.T) {
 				t.Errorf("CreateChat() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
 	}
 }
 
@@ -107,6 +185,10 @@ func TestDbStorageAdapter_CreateUser(t *testing.T) {
 			}
 		})
 	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
+	}
 }
 
 func TestDbStorageAdapter_ListChatMessages(t *testing.T) {
@@ -139,6 +221,10 @@ func TestDbStorageAdapter_ListChatMessages(t *testing.T) {
 				t.Errorf("ListChatMessages() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
 	}
 }
 
@@ -173,6 +259,10 @@ func TestDbStorageAdapter_ListUserChats(t *testing.T) {
 			}
 		})
 	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
+	}
 }
 
 func TestDbStorageAdapter_PostMessage(t *testing.T) {
@@ -206,10 +296,20 @@ func TestDbStorageAdapter_PostMessage(t *testing.T) {
 			}
 		})
 	}
+	err := midTeardown()
+	if err != nil {
+		t.Fatalf("MidTeardown errored, test failed data structure: %v", err.Error())
+	}
 }
 
 func TestMain(m *testing.M) {
-	log.Println("middleware")
-	code := m.Run()
+	code := 1
+	if err := setup(); err == nil {
+		code = m.Run()
+		teardown(true)
+	} else {
+		log.Printf("Setup error: %v", err.Error())
+		teardown(false)
+	}
 	os.Exit(code)
 }
